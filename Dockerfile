@@ -38,7 +38,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY main.py .
+COPY api.py .
 COPY ocr_service.py .
 
 # Create a directory for user files
@@ -49,10 +49,17 @@ RUN python -c "import pytesseract; print('Tesseract version:', pytesseract.get_t
     && tesseract --list-langs | grep heb \
     && ffmpeg -version
 
-# Set default command
-CMD ["python", "main.py"]
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Set default command to run FastAPI with uvicorn
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
 
 # Add labels for metadata
 LABEL maintainer="PTSD OCR Service" \
-      description="OCR service with Hebrew text support and FFmpeg integration" \
-      version="1.0"
+    description="OCR service with Hebrew text support and FFmpeg integration" \
+    version="1.0"
